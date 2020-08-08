@@ -8,8 +8,8 @@ from disent.frameworks.unsupervised.vae import Vae
 
 class BetaVae(Vae):
 
-    def __init__(self, make_optimizer_fn, make_model_fn, beta=4, batch_logvar=False):
-        super().__init__(make_optimizer_fn, make_model_fn, batch_logvar=batch_logvar)
+    def __init__(self, make_optimizer_fn, make_model_fn, beta=4, batch_logvar_mode=False):
+        super().__init__(make_optimizer_fn, make_model_fn, batch_logvar_mode=batch_logvar_mode)
         assert beta >= 0
         self.beta = beta
 
@@ -32,8 +32,8 @@ class BetaVaeH(BetaVae):
     (NOTE: BetaVAEB is from understanding disentanglement in Beta VAEs)
     """
 
-    def __init__(self, make_optimizer_fn, make_model_fn, anneal_end_steps=0, beta=4, batch_logvar=False):
-        super().__init__(make_optimizer_fn, make_model_fn, beta=beta, batch_logvar=batch_logvar)
+    def __init__(self, make_optimizer_fn, make_model_fn, anneal_end_steps=0, beta=4, batch_logvar_mode=False):
+        super().__init__(make_optimizer_fn, make_model_fn, beta=beta, batch_logvar_mode=batch_logvar_mode)
         self.anneal_end_steps = anneal_end_steps
 
     def kl_regularization(self, kl_loss):

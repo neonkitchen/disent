@@ -18,14 +18,31 @@ class BoundedAdaVae(AdaVae):
         a_z_mean, a_z_logvar = self.model.encode_gaussian(a_x)
         p_z_mean, p_z_logvar = self.model.encode_gaussian(p_x)
         n_z_mean, n_z_logvar = self.model.encode_gaussian(n_x)
-        a_z_logvar = self.mutate_z_logvar(a_z_logvar)
-        p_z_logvar = self.mutate_z_logvar(p_z_logvar)
-        n_z_logvar = self.mutate_z_logvar(n_z_logvar)
-        # intercept and mutate z [SPECIFIC TO ADAVAE]
-        (a_z_mean, a_z_logvar, p_z_mean, p_z_logvar), intercept_logs = self.intercept_z(a_z_mean, a_z_logvar, p_z_mean, p_z_logvar, n_z_mean, n_z_logvar)
-        # sample from latent distribution
-        a_z_sampled = self.reparameterize(a_z_mean, a_z_logvar)
-        p_z_sampled = self.reparameterize(p_z_mean, p_z_logvar)
+
+        if self.batch_logvar_mode == 'normal':
+            # intercept and mutate z [SPECIFIC TO ADAVAE]
+            (a_z_mean, a_z_logvar, p_z_mean, p_z_logvar), intercept_logs = self.intercept_z(a_z_mean, a_z_logvar, p_z_mean, p_z_logvar, n_z_mean, n_z_logvar)
+            # sample from latent distribution
+            a_z_sampled = self.reparameterize(a_z_mean, a_z_logvar)
+            p_z_sampled = self.reparameterize(p_z_mean, p_z_logvar)
+        elif self.batch_logvar_mode == 'reparameterize':
+            # intercept and mutate z [SPECIFIC TO ADAVAE]
+            (a_z_mean, a_z_logvar, p_z_mean, p_z_logvar), intercept_logs = self.intercept_z(a_z_mean, a_z_logvar, p_z_mean, p_z_logvar, n_z_mean, n_z_logvar)
+            # sample from latent distribution
+            a_z_sampled = self.reparameterize(a_z_mean, self.mutate_z_logvar(a_z_logvar))
+            p_z_sampled = self.reparameterize(p_z_mean, self.mutate_z_logvar(p_z_logvar))
+        elif self.batch_logvar_mode == 'all':
+            a_z_logvar = self.mutate_z_logvar(a_z_logvar)
+            p_z_logvar = self.mutate_z_logvar(p_z_logvar)
+            n_z_logvar = self.mutate_z_logvar(n_z_logvar)
+            # intercept and mutate z [SPECIFIC TO ADAVAE]
+            (a_z_mean, a_z_logvar, p_z_mean, p_z_logvar), intercept_logs = self.intercept_z(a_z_mean, a_z_logvar, p_z_mean, p_z_logvar, n_z_mean, n_z_logvar)
+            # sample from latent distribution
+            a_z_sampled = self.reparameterize(a_z_mean, a_z_logvar)
+            p_z_sampled = self.reparameterize(p_z_mean, p_z_logvar)
+        else:
+            raise RuntimeError('This should never happen')
+
         # reconstruct without the final activation
         a_x_recon = self.model.decode(a_z_sampled)
         p_x_recon = self.model.decode(p_z_sampled)

@@ -29,7 +29,7 @@ dataset:
   data_dir: '/tmp/${env:USER}/datasets'
   try_in_memory: TRUE
   # varying factors (if applicable for pairs and triplets)
-  k: 'uniform'
+  k: 1
   n_k: 'uniform'
 
 optimizer:
@@ -47,7 +47,7 @@ logging:
   # log to online service
   wandb:
     enabled: TRUE
-    name: 'all-${framework.cls.params.batch_logvar}-${framework.name}-${model.z_size}-${dataset.name}-${optimizer.name}-${model.name}'
+    name: 'k1-${framework.cls.params.batch_logvar_mode}-${framework.name}-${model.z_size}-${dataset.name}-${optimizer.name}-${model.name}'
     project: 'vae-batch-variance'
     group: null
     entity: '${env:USER}'

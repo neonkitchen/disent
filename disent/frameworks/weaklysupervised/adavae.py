@@ -10,8 +10,8 @@ from disent.frameworks.unsupervised.vae import bce_loss_with_logits, kl_normal_l
 
 class AdaVae(BetaVae):
 
-    def __init__(self, make_optimizer_fn, make_model_fn, beta=4, batch_logvar=False, average_mode='gvae'):
-        super().__init__(make_optimizer_fn, make_model_fn, beta=beta, batch_logvar=batch_logvar)
+    def __init__(self, make_optimizer_fn, make_model_fn, beta=4, batch_logvar_mode=False, average_mode='gvae'):
+        super().__init__(make_optimizer_fn, make_model_fn, beta=beta, batch_logvar_mode=batch_logvar_mode)
         # averaging modes
         self.compute_average = {
             'gvae': compute_average_gvae,
@@ -25,13 +25,30 @@ class AdaVae(BetaVae):
         # latent distribution parametrisation
         z0_mean, z0_logvar = self.model.encode_gaussian(x0)
         z1_mean, z1_logvar = self.model.encode_gaussian(x1)
-        z0_logvar = self.mutate_z_logvar(z0_logvar)
-        z1_logvar = self.mutate_z_logvar(z1_logvar)
-        # intercept and mutate z [SPECIFIC TO ADAVAE]
-        (z0_mean, z0_logvar, z1_mean, z1_logvar), intercept_logs = self.intercept_z(z0_mean, z0_logvar, z1_mean, z1_logvar)
-        # sample from latent distribution
-        z0_sampled = self.reparameterize(z0_mean, z0_logvar)
-        z1_sampled = self.reparameterize(z1_mean, z1_logvar)
+        
+        if self.batch_logvar_mode == 'normal':
+            # intercept and mutate z [SPECIFIC TO ADAVAE]
+            (z0_mean, z0_logvar, z1_mean, z1_logvar), intercept_logs = self.intercept_z(z0_mean, z0_logvar, z1_mean, z1_logvar)
+            # sample from latent distribution
+            z0_sampled = self.reparameterize(z0_mean, z0_logvar)
+            z1_sampled = self.reparameterize(z1_mean, z1_logvar)
+        elif self.batch_logvar_mode == 'reparameterize':
+            # intercept and mutate z [SPECIFIC TO ADAVAE]
+            (z0_mean, z0_logvar, z1_mean, z1_logvar), intercept_logs = self.intercept_z(z0_mean, z0_logvar, z1_mean, z1_logvar)
+            # sample from latent distribution
+            z0_sampled = self.reparameterize(z0_mean, self.mutate_z_logvar(z0_logvar))
+            z1_sampled = self.reparameterize(z1_mean, self.mutate_z_logvar(z1_logvar))
+        elif self.batch_logvar_mode == 'all':
+            z0_logvar = self.mutate_z_logvar(z0_logvar)
+            z1_logvar = self.mutate_z_logvar(z1_logvar)
+            # intercept and mutate z [SPECIFIC TO ADAVAE]
+            (z0_mean, z0_logvar, z1_mean, z1_logvar), intercept_logs = self.intercept_z(z0_mean, z0_logvar, z1_mean, z1_logvar)
+            # sample from latent distribution
+            z0_sampled = self.reparameterize(z0_mean, z0_logvar)
+            z1_sampled = self.reparameterize(z1_mean, z1_logvar)
+        else:
+            raise RuntimeError('This should never happen')
+
         # reconstruct without the final activation
         x0_recon = self.model.decode(z0_sampled)
         x1_recon = self.model.decode(z1_sampled)

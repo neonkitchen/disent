@@ -15,20 +15,21 @@ class Vae(BaseFramework):
     https://arxiv.org/abs/1312.6114
     """
 
-    def __init__(self, make_optimizer_fn, make_model_fn, batch_logvar=False):
+    def __init__(self, make_optimizer_fn, make_model_fn, batch_logvar_mode='normal'):
         super().__init__(make_optimizer_fn)
         # vae model
         assert callable(make_model_fn)
         self.model = make_model_fn()
         assert isinstance(self.model, GaussianAutoEncoder)
-        # batch_logvar
-        self.batch_logvar = batch_logvar
+        # batch_logvar_mode
+        assert batch_logvar_mode in {'normal', 'reparameterize', 'all'}
+        self.batch_logvar_mode = batch_logvar_mode
 
     def forward(self, batch) -> torch.Tensor:
         return self.model.forward_deterministic(batch)
     
     def mutate_z_logvar(self, z_logvar):
-        if self.batch_logvar:
+        if self.batch_logvar_mode:
             z_logvar = z_logvar.exp().mean(dim=0, keepdim=True).log().expand(len(z_logvar), -1)
         return z_logvar
     
@@ -42,9 +43,16 @@ class Vae(BaseFramework):
         # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~- #
         # latent distribution parametrisation
         z_mean, z_logvar = self.model.encode_gaussian(x)
-        z_logvar = self.mutate_z_logvar(z_logvar)
         # sample from latent distribution
-        z = self.reparameterize(z_mean, z_logvar)
+        if self.batch_logvar_mode == 'normal':
+            z = self.reparameterize(z_mean, z_logvar)
+        elif self.batch_logvar_mode == 'reparameterize':
+            z = self.reparameterize(z_mean, self.mutate_z_logvar(z_logvar))
+        elif self.batch_logvar_mode == 'all':
+            z_logvar = self.mutate_z_logvar(z_logvar)
+            z = self.reparameterize(z_mean, z_logvar)
+        else:
+            raise RuntimeError('This should never happen')
         # reconstruct without the final activation
         x_recon = self.model.decode(z)
         # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~- #
