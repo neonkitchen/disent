@@ -47,8 +47,8 @@ logging:
   # log to online service
   wandb:
     enabled: TRUE
-    name: 'uniform-${framework.name}-${model.z_size}-${dataset.name}-${optimizer.name}-${model.name}'
-    project: 'test'
+    name: '${framework.cls.params.batch_logvar}-${framework.name}-${model.z_size}-${dataset.name}-${optimizer.name}-${model.name}'
+    project: 'vae-batch-variance'
     group: null
     entity: '${env:USER}'
     tags:
@@ -56,7 +56,6 @@ logging:
       - '${dataset.name}'
       - '${optimizer.name}'
       - '${model.name}'
-      - 'datafix-1'
 
 # TODO: fix, this is terrible
 callbacks:

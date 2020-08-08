@@ -4,3 +4,4 @@ cls:
   target: disent.frameworks.unsupervised.betavae.BetaVae
   params:
     beta: 4
+    batch_logvar: FALSE

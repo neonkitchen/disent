@@ -2,3 +2,5 @@
 name: vae
 cls:
   target: disent.frameworks.unsupervised.vae.VaeLoss
+  params:
+    batch_logvar: FALSE

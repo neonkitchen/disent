@@ -70,6 +70,7 @@ class GaussianAutoEncoder(BaseModule):
           -> decode  |
           -> x_recon | no final activation
         """
+        raise NotImplementedError
         # encode
         z_mean, z_logvar = self.encode_gaussian(x)
         z = self.reparameterize(z_mean, z_logvar)

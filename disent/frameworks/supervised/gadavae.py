@@ -10,8 +10,8 @@ from disent.frameworks.unsupervised.vae import bce_loss_with_logits, kl_normal_l
 
 class GuidedAdaVae(AdaVae):
     
-    def __init__(self, make_optimizer_fn, make_model_fn, beta=4, average_mode='gvae', anchor_ave_mode='average'):
-        super().__init__(make_optimizer_fn, make_model_fn, beta=beta, average_mode=average_mode)
+    def __init__(self, make_optimizer_fn, make_model_fn, beta=4, batch_logvar=False, average_mode='gvae', anchor_ave_mode='average'):
+        super().__init__(make_optimizer_fn, make_model_fn, beta=beta, batch_logvar=batch_logvar, average_mode=average_mode)
         # how the anchor is averaged
         assert anchor_ave_mode in {'thresh', 'average'}
         self.anchor_ave_mode = anchor_ave_mode
@@ -27,9 +27,9 @@ class GuidedAdaVae(AdaVae):
         # intercept and mutate z [SPECIFIC TO ADAVAE]
         (a_z_mean, a_z_logvar, p_z_mean, p_z_logvar, n_z_mean, n_z_logvar), intercept_logs = self.intercept_z(a_z_mean, a_z_logvar, p_z_mean, p_z_logvar, n_z_mean, n_z_logvar)
         # sample from latent distribution
-        a_z_sampled = self.model.reparameterize(a_z_mean, a_z_logvar)
-        p_z_sampled = self.model.reparameterize(p_z_mean, p_z_logvar)
-        n_z_sampled = self.model.reparameterize(n_z_mean, n_z_logvar)
+        a_z_sampled = self.reparameterize(a_z_mean, a_z_logvar)
+        p_z_sampled = self.reparameterize(p_z_mean, p_z_logvar)
+        n_z_sampled = self.reparameterize(n_z_mean, n_z_logvar)
         # reconstruct without the final activation
         a_x_recon = self.model.decode(a_z_sampled)
         p_x_recon = self.model.decode(p_z_sampled)

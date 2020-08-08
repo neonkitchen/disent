@@ -4,6 +4,7 @@ cls:
   target: disent.frameworks.weaklysupervised.adavae.AdaVae
   params:
     beta: 4
+    batch_logvar: FALSE
     average_mode: 'gvae'  # gvae or ml-vae
 
 augment_dataset:

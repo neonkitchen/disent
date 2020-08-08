@@ -10,8 +10,8 @@ from disent.frameworks.unsupervised.vae import bce_loss_with_logits, kl_normal_l
 
 class AdaVae(BetaVae):
 
-    def __init__(self, make_optimizer_fn, make_model_fn, beta=4, average_mode='gvae'):
-        super().__init__(make_optimizer_fn, make_model_fn, beta=beta)
+    def __init__(self, make_optimizer_fn, make_model_fn, beta=4, batch_logvar=False, average_mode='gvae'):
+        super().__init__(make_optimizer_fn, make_model_fn, beta=beta, batch_logvar=batch_logvar)
         # averaging modes
         self.compute_average = {
             'gvae': compute_average_gvae,
@@ -28,8 +28,8 @@ class AdaVae(BetaVae):
         # intercept and mutate z [SPECIFIC TO ADAVAE]
         (z0_mean, z0_logvar, z1_mean, z1_logvar), intercept_logs = self.intercept_z(z0_mean, z0_logvar, z1_mean, z1_logvar)
         # sample from latent distribution
-        z0_sampled = self.model.reparameterize(z0_mean, z0_logvar)
-        z1_sampled = self.model.reparameterize(z1_mean, z1_logvar)
+        z0_sampled = self.reparameterize(z0_mean, z0_logvar)
+        z1_sampled = self.reparameterize(z1_mean, z1_logvar)
         # reconstruct without the final activation
         x0_recon = self.model.decode(z0_sampled)
         x1_recon = self.model.decode(z1_sampled)

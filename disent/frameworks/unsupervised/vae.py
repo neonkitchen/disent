@@ -15,15 +15,22 @@ class Vae(BaseFramework):
     https://arxiv.org/abs/1312.6114
     """
 
-    def __init__(self, make_optimizer_fn, make_model_fn):
+    def __init__(self, make_optimizer_fn, make_model_fn, batch_logvar=False):
         super().__init__(make_optimizer_fn)
         # vae model
         assert callable(make_model_fn)
         self.model = make_model_fn()
         assert isinstance(self.model, GaussianAutoEncoder)
+        # batch_logvar
+        self.batch_logvar = batch_logvar
 
     def forward(self, batch) -> torch.Tensor:
         return self.model.forward_deterministic(batch)
+    
+    def reparameterize(self, z_mean, z_logvar):
+        if self.batch_logvar:
+            z_logvar = z_logvar.exp().mean(dim=0, keepdim=True).log().expand(len(z_mean), -1)
+        return self.model.reparameterize(z_mean, z_logvar)
 
     def compute_loss(self, batch, batch_idx):
         x = batch
@@ -33,7 +40,7 @@ class Vae(BaseFramework):
         # latent distribution parametrisation
         z_mean, z_logvar = self.model.encode_gaussian(x)
         # sample from latent distribution
-        z = self.model.reparameterize(z_mean, z_logvar)
+        z = self.reparameterize(z_mean, z_logvar)
         # reconstruct without the final activation
         x_recon = self.model.decode(z)
         # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~- #
