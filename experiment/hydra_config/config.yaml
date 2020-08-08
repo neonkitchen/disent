@@ -47,7 +47,7 @@ logging:
   # log to online service
   wandb:
     enabled: TRUE
-    name: '${framework.cls.params.batch_logvar}-${framework.name}-${model.z_size}-${dataset.name}-${optimizer.name}-${model.name}'
+    name: 'all-${framework.cls.params.batch_logvar}-${framework.name}-${model.z_size}-${dataset.name}-${optimizer.name}-${model.name}'
     project: 'vae-batch-variance'
     group: null
     entity: '${env:USER}'

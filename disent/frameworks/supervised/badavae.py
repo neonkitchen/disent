@@ -18,6 +18,9 @@ class BoundedAdaVae(AdaVae):
         a_z_mean, a_z_logvar = self.model.encode_gaussian(a_x)
         p_z_mean, p_z_logvar = self.model.encode_gaussian(p_x)
         n_z_mean, n_z_logvar = self.model.encode_gaussian(n_x)
+        a_z_logvar = self.mutate_z_logvar(a_z_logvar)
+        p_z_logvar = self.mutate_z_logvar(p_z_logvar)
+        n_z_logvar = self.mutate_z_logvar(n_z_logvar)
         # intercept and mutate z [SPECIFIC TO ADAVAE]
         (a_z_mean, a_z_logvar, p_z_mean, p_z_logvar), intercept_logs = self.intercept_z(a_z_mean, a_z_logvar, p_z_mean, p_z_logvar, n_z_mean, n_z_logvar)
         # sample from latent distribution

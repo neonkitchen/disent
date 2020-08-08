@@ -27,9 +27,12 @@ class Vae(BaseFramework):
     def forward(self, batch) -> torch.Tensor:
         return self.model.forward_deterministic(batch)
     
-    def reparameterize(self, z_mean, z_logvar):
+    def mutate_z_logvar(self, z_logvar):
         if self.batch_logvar:
-            z_logvar = z_logvar.exp().mean(dim=0, keepdim=True).log().expand(len(z_mean), -1)
+            z_logvar = z_logvar.exp().mean(dim=0, keepdim=True).log().expand(len(z_logvar), -1)
+        return z_logvar
+    
+    def reparameterize(self, z_mean, z_logvar):
         return self.model.reparameterize(z_mean, z_logvar)
 
     def compute_loss(self, batch, batch_idx):
@@ -39,6 +42,7 @@ class Vae(BaseFramework):
         # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~- #
         # latent distribution parametrisation
         z_mean, z_logvar = self.model.encode_gaussian(x)
+        z_logvar = self.mutate_z_logvar(z_logvar)
         # sample from latent distribution
         z = self.reparameterize(z_mean, z_logvar)
         # reconstruct without the final activation

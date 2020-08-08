@@ -25,6 +25,8 @@ class AdaVae(BetaVae):
         # latent distribution parametrisation
         z0_mean, z0_logvar = self.model.encode_gaussian(x0)
         z1_mean, z1_logvar = self.model.encode_gaussian(x1)
+        z0_logvar = self.mutate_z_logvar(z0_logvar)
+        z1_logvar = self.mutate_z_logvar(z1_logvar)
         # intercept and mutate z [SPECIFIC TO ADAVAE]
         (z0_mean, z0_logvar, z1_mean, z1_logvar), intercept_logs = self.intercept_z(z0_mean, z0_logvar, z1_mean, z1_logvar)
         # sample from latent distribution
