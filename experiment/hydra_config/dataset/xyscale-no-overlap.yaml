@@ -1,0 +1,19 @@
+# @package _group_
+name: xyscale-no-overlap
+cls:
+  target: disent.dataset.ground_truth_data.data_xygrid.XYData
+  params:
+    grid_size: 64
+    grid_spacing: 3
+    min_square_size: 1
+    max_square_size: 3
+    square_size_spacing: 1
+    rgb: TRUE
+    palette: 'colors_halves'
+transforms:
+  - target: torchvision.transforms.ToTensor
+x_shape: [3, 64, 64]
+
+# steps = ceil(sizes * colors * (floor((64 - max_size)/max_size)+1)**2 / batch_size)
+# sizes=3, colors=14, max_size=3, batch_size=256
+# steps = 73

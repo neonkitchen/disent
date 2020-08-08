@@ -14,8 +14,8 @@ defaults:
 
 # remember to set timeout limits below
 trainer:
-  epochs: 250
-  steps: null
+  epochs: 100000  # not resilient to change in dataset size, we rather limit by steps (len(dataset) / batch_size)
+  steps: 100000
   cuda: TRUE
   prepare_data_per_node: TRUE
 
@@ -42,12 +42,12 @@ optimizer:
 logging:
   logs_dir: 'logs'
   # logging frequency in number of batchers, default: log_interval=50, save_log_interval=100
-  log_interval: 100
-  save_log_interval: 200
+  log_interval: 70
+  save_log_interval: 70
   # log to online service
   wandb:
     enabled: TRUE
-    name: 'k1-${framework.cls.params.batch_logvar_mode}-${framework.name}-${model.z_size}-${dataset.name}-${optimizer.name}-${model.name}'
+    name: 'GRID-k1-${framework.cls.params.batch_logvar_mode}-${framework.name}-${model.z_size}-${dataset.name}-${optimizer.name}-${model.name}'
     project: 'vae-batch-variance'
     group: null
     entity: '${env:USER}'
@@ -56,6 +56,7 @@ logging:
       - '${dataset.name}'
       - '${optimizer.name}'
       - '${model.name}'
+      - 'no-xy-overlap'
 
 # TODO: fix, this is terrible
 callbacks:
@@ -65,10 +66,10 @@ callbacks:
   latent_cycle:
     enabled: TRUE
     seed: 7777
-    every_n_epochs: 5
+    every_n_steps: 1000
   metrics:
     enabled: TRUE
-    every_n_epochs: 10
+    every_n_steps: 2000
 
 hydra:
   job:

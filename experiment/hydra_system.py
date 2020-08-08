@@ -114,9 +114,9 @@ def hydra_check_datadir(prepare_data_per_node, cfg):
 def hydra_append_metric_callback(callbacks, cfg):
     if cfg.callbacks.metrics.enabled:
         callbacks.append(DisentanglementLoggingCallback(
-            every_n_epochs=cfg.callbacks.metrics.every_n_epochs,
-            begin_first_epoch=False,
-            epoch_end_metrics=[
+            every_n_steps=cfg.callbacks.metrics.every_n_steps,
+            begin_first_step=False,
+            step_end_metrics=[
                 lambda dat, fn: compute_dci(dat, fn, 1000, 500, boost_mode='sklearn'),
                 lambda dat, fn: compute_factor_vae(dat, fn, num_train=1000, num_eval=500, num_variance_estimate=1000),
             ],
@@ -154,8 +154,8 @@ def hydra_append_latent_cycle_logger_callback(callbacks, cfg):
             # Log the latent cycle visualisations to wandb
             callbacks.append(LatentCycleLoggingCallback(
                 seed=cfg.callbacks.latent_cycle.seed,
-                every_n_epochs=cfg.callbacks.latent_cycle.every_n_epochs,
-                begin_first_epoch=False,
+                every_n_steps=cfg.callbacks.latent_cycle.every_n_steps,
+                begin_first_step=False,
             ))
 
 

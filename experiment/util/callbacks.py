@@ -20,14 +20,14 @@ log = logging.getLogger(__name__)
 
 class LatentCycleLoggingCallback(pl.Callback):
     
-    def __init__(self, seed=7777, every_n_epochs=1, begin_first_epoch=False):
+    def __init__(self, seed=7777, every_n_steps=250, begin_first_step=False):
         self.seed = seed
-        self.every_n_epochs = every_n_epochs
-        self.begin_first_epoch = begin_first_epoch
+        self.every_n_steps = every_n_steps
+        self.begin_first_step = begin_first_step
     
-    def on_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+    def on_batch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
         # skip if need be
-        if 0 != (trainer.current_epoch + int(not self.begin_first_epoch)) % self.every_n_epochs:
+        if 0 != (trainer.global_step + int(not self.begin_first_step)) % self.every_n_steps:
             return
 
         # VISUALISE - generate and log latent traversals
@@ -51,21 +51,20 @@ class LatentCycleLoggingCallback(pl.Callback):
         
         # log video
         trainer.log_metrics({
-            'epoch': trainer.current_epoch,
             'fitted_gaussian_cycle': wandb.Video(frames, fps=5, format='mp4'),
         }, {})
 
 
 class DisentanglementLoggingCallback(pl.Callback):
     
-    def __init__(self, epoch_end_metrics=None, train_end_metrics=None, every_n_epochs=2, begin_first_epoch=False):
-        self.begin_first_epoch = begin_first_epoch
-        self.epoch_end_metrics = epoch_end_metrics if epoch_end_metrics else []
+    def __init__(self, step_end_metrics=None, train_end_metrics=None, every_n_steps=1000, begin_first_step=False):
+        self.begin_first_step = begin_first_step
+        self.step_end_metrics = step_end_metrics if step_end_metrics else []
         self.train_end_metrics = train_end_metrics if train_end_metrics else []
-        self.every_n_epochs = every_n_epochs
-        assert isinstance(self.epoch_end_metrics, list)
+        self.every_n_steps = every_n_steps
+        assert isinstance(self.step_end_metrics, list)
         assert isinstance(self.train_end_metrics, list)
-        assert self.epoch_end_metrics or self.train_end_metrics, 'No metrics given to epoch_end_metrics or train_end_metrics'
+        assert self.step_end_metrics or self.train_end_metrics, 'No metrics given to step_end_metrics or train_end_metrics'
     
     def _compute_metrics_and_log(self, trainer: pl.Trainer, pl_module: pl.LightningModule, metrics: list, is_final=False):
         # TODO: re-enable
@@ -74,19 +73,18 @@ class DisentanglementLoggingCallback(pl.Callback):
         # compute all metrics
         for metric in metrics:
             scores = metric(trainer.datamodule.dataset, lambda x: pl_module.model.encode_deterministic(x.to(pl_module.device)))
-            log.info(f'metric (epoch: {trainer.current_epoch}): {scores}')
+            log.info(f'metric (step: {trainer.global_step}): {scores}')
             # log to wandb if it exists
             trainer.log_metrics({
-                'epoch': trainer.current_epoch,
                 'final_metric' if is_final else 'epoch_metric': scores,
             }, {})
     
-    def on_epoch_end(self, trainer, pl_module):
-        if self.epoch_end_metrics:
+    def on_batch_end(self, trainer, pl_module):
+        if self.step_end_metrics:
             # first epoch is 0, if we dont want the first one to be run we need to increment by 1
-            if 0 == (trainer.current_epoch + int(not self.begin_first_epoch)) % self.every_n_epochs:
+            if 0 == (trainer.global_step + int(not self.begin_first_step)) % self.every_n_steps:
                 log.info('Computing epoch metrics:')
-                self._compute_metrics_and_log(trainer, pl_module, metrics=self.epoch_end_metrics)
+                self._compute_metrics_and_log(trainer, pl_module, metrics=self.step_end_metrics)
 
     def on_train_end(self, trainer, pl_module):
         if self.train_end_metrics:
