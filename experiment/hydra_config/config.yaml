@@ -1,8 +1,8 @@
 defaults:
-  - framework: gadavae
+  - framework: adavae
   - model: conv64
   - optimizer: radam
-  - dataset: xyscalecolorgrid
+  - dataset: xysquares
   # hydra plugins
   - hydra/job_logging: colorlog
   - hydra/hydra_logging: colorlog
@@ -47,7 +47,7 @@ logging:
   # log to online service
   wandb:
     enabled: TRUE
-    name: 'GRID-k1-${framework.cls.params.batch_logvar_mode}-${framework.name}-${model.z_size}-${dataset.name}-${optimizer.name}-${model.name}'
+    name: 'O-k1-${framework.cls.params.batch_logvar_mode}-${framework.name}-${model.z_size}-${dataset.name}-${optimizer.name}-${model.name}'
     project: 'vae-batch-variance'
     group: null
     entity: '${env:USER}'

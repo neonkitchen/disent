@@ -298,11 +298,11 @@ def reconstructions_to_images(recon, mode='float', moveaxis=True):
 #     img_shape = np.array(images[0].shape)
 #     img_size, img_channels = img_shape[:2], img_shape[2]
 #     dy, dx = img_size + pad
-#     grid_size = (img_size + pad) * grid_width - pad
+#     _grid_size = (img_size + pad) * grid_width - pad
 #     # make image
-#     grid = np.zeros_like(images, shape=(*grid_size, img_channels))
+#     grid = np.zeros_like(images, shape=(*_grid_size, img_channels))
 #     for i, img in enumerate(images):
-#         iy, ix = i // grid_size, i % grid_size
+#         iy, ix = i // _grid_size, i % _grid_size
 #         grid[dy*iy:dy*(iy+1), dx*ix:dx*(ix+1), :] = img
 #     # return made image
 #     return grid
