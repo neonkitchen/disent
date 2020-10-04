@@ -1,4 +1,7 @@
+import kornia
 import torch
+import torchvision
+
 import disent.transform.functional as F_d
 
 
@@ -49,3 +52,27 @@ class ToStandardisedTensor(object):
     def __repr__(self):
         return f'{self.__class__.__name__}(size={repr(self._size)})'
 
+
+class InputNormalizeTensor(object):
+    """
+    Basic transform that should be applied after augmentation before
+    being passed to a model as the input.
+
+    1. check that tensor is in range [0, 1]
+    2. normalise tensor in range [-1, 1]
+    """
+
+    def __init__(self, check=False):
+        if check:
+            self._transform = torchvision.transforms.Compose([
+                CheckTensor(low=0, high=1, dtype=torch.float32),
+                kornia.augmentation.Normalize(mean=0.5, std=0.5),
+            ])
+        else:
+            self._transform = kornia.augmentation.Normalize(mean=0.5, std=0.5)
+
+    def __call__(self, obs) -> torch.Tensor:
+        return self._transform(obs)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}()'

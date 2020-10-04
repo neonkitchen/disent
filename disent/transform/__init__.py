@@ -1,2 +1,2 @@
 
-from ._transforms import Noop, CheckTensor, ToStandardisedTensor
+from ._transforms import Noop, CheckTensor, ToStandardisedTensor, InputNormalizeTensor
