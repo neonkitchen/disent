@@ -6,3 +6,4 @@ from .experimental._gadavae import GuidedAdaVae
 from .experimental._tbadavae import TripletBoundedAdaVae
 from .experimental._tgadavae import TripletGuidedAdaVae
 from .experimental._adatvae import AdaTripletVae
+from .experimental._adatvae_elem import AdaTripletVaeElementWise

@@ -7,7 +7,7 @@ defaults:
   - augment: none
   - sampling: full_bb
   # runtime
-  - run_trainer: short
+  - run_trainer: long
   - run_callbacks: default
   - run_location: cluster
   - run_logging: wandb
@@ -18,7 +18,7 @@ defaults:
 
 job:
   user: 'n_michlo'
-  project: 'reg-triplet-tests'
+  project: 'triplet-elem-wise-tests'
   name: '${framework.name}|${optimizer.name}|${model.name}:${model.z_size}|${dataset.name}:${augment.name}'
 
 model:
