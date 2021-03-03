@@ -23,6 +23,8 @@
 #  ~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~
 
 from dataclasses import dataclass
+from numbers import Number
+from typing import Dict
 from typing import Tuple, final
 
 import torch
@@ -68,6 +70,8 @@ class Vae(AE):
         # -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~- #
         # latent distribution parameterizations
         z_params = self.training_encode_params(x)
+        # intercept parameters
+        (z_params,), intercept_logs = self.intercept_zs(all_params=(z_params,))
         # sample from latent distribution
         (d_posterior, d_prior), z_sampled = self.training_params_to_distributions_and_sample(z_params)
         # reconstruct without the final activation
@@ -92,6 +96,7 @@ class Vae(AE):
             'kl_reg_loss': kl_reg_loss,
             'kl_loss': kl_loss,
             'elbo': -(recon_loss + kl_loss),
+            **intercept_logs,
         }
 
     # --------------------------------------------------------------------- #
@@ -136,6 +141,10 @@ class Vae(AE):
 
     def training_regularize_kl(self, kl_loss):
         return kl_loss
+
+    def intercept_zs(self, all_params: Tuple['Params', ...]) -> Tuple[Tuple['Params', ...], Dict[str, Number]]:
+        # TODO: this is not yet implemented across models
+        return all_params, {}
 
 
 # ========================================================================= #

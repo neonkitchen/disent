@@ -24,11 +24,14 @@
 
 from ._conv64 import DecoderConv64
 from ._conv64 import EncoderConv64
-# components
 from ._fc import DecoderFC
 from ._fc import EncoderFC
 from ._simpleconv64 import DecoderSimpleConv64
 from ._simpleconv64 import EncoderSimpleConv64
 from ._simplefc import DecoderSimpleFC
 from ._simplefc import EncoderSimpleFC
+from ._levels64 import DecoderLevels64
+from ._levels64 import EncoderLevels64
+
+# components
 from .base import AutoEncoder

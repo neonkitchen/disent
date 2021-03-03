@@ -1,0 +1,10 @@
+# @package _group_
+name: fvvae
+module:
+  _target_: disent.frameworks.vae.unsupervised.FixedVarianceVae
+  beta: ${framework.beta}
+  std: 0.1
+
+# settings used elsewhere
+data_wrap_mode: single
+model_z_multiplier: 2

@@ -1,0 +1,15 @@
+# @package _group_
+name: 'levels64-${model.num_levels}'
+weight_init: 'xavier_normal'
+num_levels: 4
+encoder:
+  _target_: disent.model.ae.EncoderLevels64
+  x_shape: ${dataset.x_shape}
+  z_size: ${model.z_size}
+  z_multiplier: ${framework.model_z_multiplier}
+  num_levels: ${model.num_levels}
+decoder:
+  _target_: disent.model.ae.DecoderLevels64
+  x_shape: ${dataset.x_shape}
+  z_size: ${model.z_size}
+  num_levels: ${model.num_levels}

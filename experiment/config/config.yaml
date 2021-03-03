@@ -8,16 +8,16 @@
 
 defaults:
   # experiment
-  - framework: betavae
-  - model: conv64
+  - framework: X--fvvae
+  - model: levels64
   - optimizer: radam
   - dataset: xysquares
   - augment: none
   - sampling: full_bb
   - metrics: all
-  - schedule: beta_increase
+  - schedule: fvvae_std_cyclic
   # runtime
-  - run_length: short
+  - run_length: long
   - run_location: cluster_many
   - run_callbacks: vis
   - run_logging: wandb
@@ -28,8 +28,8 @@ defaults:
 
 job:
   user: 'n_michlo'
-  project: 'DELETE-test-schedules'
-  name: '${framework.name}:${framework.module.recon_loss}|${dataset.name}:${sampling.name}|${trainer.steps}'
+  project: 'test-conv-levels'
+  name: '${model.num_levels}|${framework.name}:${framework.module.recon_loss}|${dataset.name}:${sampling.name}|${trainer.steps}'
   partition: batch
 
 framework:
