@@ -39,7 +39,7 @@ class FixedVarianceVae(BetaVae):
 
     @dataclass
     class cfg(BetaVae.cfg):
-        std: float = 0.1
+        std: float = 1.0
 
     def __init__(self, make_optimizer_fn, make_model_fn, batch_augment=None, cfg: cfg = None):
         super().__init__(make_optimizer_fn, make_model_fn, batch_augment=batch_augment, cfg=cfg)
