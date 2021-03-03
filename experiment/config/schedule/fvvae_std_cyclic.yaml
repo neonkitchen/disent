@@ -14,6 +14,6 @@ schedules:
       period: 7200
       repeats: NULL
       r_start: 1e-10
-      r_end: 0.1
+      r_end: 0.05
       end_value: 'end'
       mode: 'linear'
