@@ -3,7 +3,7 @@ name: fvvae
 module:
   _target_: disent.frameworks.vae.unsupervised.FixedVarianceVae
   beta: ${framework.beta}
-  std: 0.1
+  std: 1.0
 
 # settings used elsewhere
 data_wrap_mode: single

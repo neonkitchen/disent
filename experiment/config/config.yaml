@@ -17,7 +17,7 @@ defaults:
   - metrics: all
   - schedule: fvvae_std_cyclic
   # runtime
-  - run_length: long
+  - run_length: epic
   - run_location: cluster_many
   - run_callbacks: vis_slow
   - run_logging: wandb
@@ -28,7 +28,7 @@ defaults:
 
 job:
   user: 'n_michlo'
-  project: 'test-conv-levels'
+  project: 'test-conv-levels-cycle'
   name: '${model.num_levels}|${framework.name}:${framework.module.recon_loss}|${dataset.name}:${sampling.name}|${trainer.steps}'
   partition: batch
 
