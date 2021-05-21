@@ -22,23 +22,24 @@
 #  SOFTWARE.
 #  ~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~
 
-
 import ast
 import dataclasses
+import os
 import re
 import string
-from collections import namedtuple
 from functools import lru_cache
 from glob import glob
 from typing import List
 from typing import Optional
 from typing import Tuple
 
+import networkx as nx
+from matplotlib import pyplot as plt
+
 
 # ========================================================================= #
 # Ast                                                                       #
 # ========================================================================= #
-from matplotlib import pyplot as plt
 
 
 def ast_parse(file):
@@ -159,35 +160,58 @@ def glob_parse_modules(glob_path='**/*.py', recursive=True):
 
 
 # ========================================================================= #
-# Loader                                                                    #
+# Create Network                                                            #
 # ========================================================================= #
 
 
-
-if __name__ == '__main__':
-
-    modules = glob_parse_modules('**/*.py')
-
-    import networkx as nx
-
-    def can_show_module(name):
-        return (name.startswith('disent.frameworks.ae') or name.startswith('disent.frameworks.vae')) # and 'experimental' not in name
-    def can_show_import(name):
-        return (name.startswith('disent.frameworks.ae') or name.startswith('disent.frameworks.vae')) # and 'experimental' not in name
-
+def create_module_graph(modules):
+    # create graph
     G = nx.DiGraph()
-    for module in modules.values():
-        # G.add_node(module.module)
+    for module in modules:
         for imp in module.imports:
-            # G.add_node(imp.module)
-            if can_show_module(module.module) and can_show_import(imp.module):
-                G.add_edge(imp.module, module.module)
+            G.add_edge(imp.module, module.module)
+        for imp in module.scoped_imports:
+            G.add_edge(imp.module, module.module)
+    return G
 
+
+def glob_module_graph(glob_path='**/*.py', recursive=True):
+    modules = glob_parse_modules(glob_path=glob_path, recursive=recursive)
+    return create_module_graph(modules.values())
+
+
+def glob_find_cycles(glob_path='**/*.py', recursive=True):
+    G = glob_module_graph(glob_path=glob_path, recursive=recursive)
+    return list(nx.simple_cycles(G))
+
+
+def glob_plot(glob_path='**/*.py', recursive=True):
+    G = glob_module_graph(glob_path=glob_path, recursive=recursive)
+    # plot
     fig, ax = plt.subplots(figsize=(15, 15))
     nx.draw_kamada_kawai(G, with_labels=True, font_weight='bold', ax=ax)
     plt.show()
 
 
+def glob_visualise(save_file: str, glob_path='**/*.py', recursive=True):
+    G = glob_module_graph(glob_path=glob_path, recursive=recursive)
+    # check
+    assert save_file.endswith('.html')
+    # visualise
+    from pyvis.network import Network
+    net = Network(notebook=False, directed=True, width='100%', height='100%')
+    net.from_nx(G)
+    net.show(save_file)
 
+
+# ========================================================================= #
+# Loader                                                                    #
+# ========================================================================= #
+
+
+if __name__ == '__main__':
+    for cycle in glob_find_cycles(glob_path='**/*.py'):
+        print(cycle)
+    glob_visualise(save_file=os.path.join(os.path.dirname(__file__), "example.html"))
 
 
