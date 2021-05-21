@@ -24,6 +24,7 @@
 
 import ast
 import dataclasses
+import itertools
 import os
 import re
 import string
@@ -78,7 +79,7 @@ Import = namedtuple('Import', 'module name')
 
 
 @lru_cache()
-def _module_file_to_str(file, root_dir=None, remove_init=False):
+def _file_to_import_str(file, root_dir=None):
     assert file.endswith('.py')
     # normalise paths
     if root_dir is not None:
@@ -89,12 +90,33 @@ def _module_file_to_str(file, root_dir=None, remove_init=False):
     assert not os.path.isabs(file), f'module path is not relative: {repr(file)} : {root_dir}'
     # get module
     module = file.replace('/', '.')[:-len('.py')]
-    # assert all(str.isidentifier(token) for token in module.split('.'))
-    # remove __init__
-    if remove_init:
-        if module.endswith('.__init__'):
-            module = module[:-len('.__init__')]
+    # done!
     return module
+
+
+def file_to_import_str(file, root_dir=None, strip_mode: str = 'file'):
+    return import_str_strip(_file_to_import_str(file, root_dir=root_dir), strip_mode=strip_mode)
+
+
+@lru_cache()
+def import_str_strip(import_path: str, strip_mode: str = 'file'):
+    # strip end of module
+    if strip_mode == 'no_init':
+        if import_path.endswith('.__init__'):
+            import_path = import_path[:-len('.__init__')]
+    elif strip_mode == 'module':
+        try:
+            import_path = import_path[:import_path.rindex('.')]
+        except:
+            print(import_path)
+            print(import_path)
+            print(import_path)
+            raise Exception
+    elif strip_mode == 'file':
+        pass
+    else:
+        raise KeyError(f'invalid remove mode: {repr(strip_mode)}')
+    return import_path
 
 
 class Module(object):
@@ -102,8 +124,7 @@ class Module(object):
     def __init__(self, file: str, root_dir=None):
         self._file: str = file
         self._root_dir: str = os.getcwd() if (root_dir is None) else root_dir
-        self._module: str = _module_file_to_str(file, root_dir=self.root_dir, remove_init=True)
-        self._full_module: str = _module_file_to_str(file, root_dir=self.root_dir, remove_init=False)
+        self._import_str: str = file_to_import_str(file, root_dir=self.root_dir)
         # load imports
         imports, scoped_imports = self._parse_imports(file)
         self._imports: List[Import] = imports
@@ -113,10 +134,17 @@ class Module(object):
     def file(self) -> str: return self._file
     @property
     def root_dir(self) -> str: return self._root_dir
+
+    def get_import_str(self, strip_mode='file'):
+        return import_str_strip(self._import_str, strip_mode=strip_mode)
+
     @property
-    def module(self) -> str: return self._module
+    def import_no_init(self) -> str: return self.get_import_str(strip_mode='no_init')
     @property
-    def full_module(self) -> str: return self._full_module
+    def import_file(self) -> str: return self.get_import_str(strip_mode='file')
+    @property
+    def import_module(self) -> str: return self.get_import_str(strip_mode='module')
+
     @property
     def imports(self) -> List[Import]: return list(self._imports)
     @property
@@ -152,7 +180,7 @@ class Module(object):
         assert line[0] not in string.whitespace
         # check if relative
         if line[0] == '.':
-            module = '.'.join(_module_file_to_str(file, root_dir=self.root_dir, remove_init=False).split('.')[:-1] + [module])
+            module = file_to_import_str(file, root_dir=self.root_dir, strip_mode='module') + f'.{module}'
         return Import(module=module, name=name)
 
     @staticmethod
@@ -166,24 +194,14 @@ class Module(object):
 class Modules(object):
 
     def __init__(self, modules):
-        self._modules: Dict[str, Module] = {m.module: m for m in modules}
-        self._graph: nx.DiGraph = self._make_graph(include_scoped=False)
+        self._modules: List[Module] = list(modules)
 
     def __repr__(self):
-        roots = set(m.root_dir for m in self._modules.values())
-        return f'Modules<num={len(self._modules)}, roots={sorted(roots)}>'
-
-    @property
-    def graph_imported(self):
-        return self._graph.copy()
-
-    @property
-    def graph_importers(self):
-        return self._graph.reverse()
+        return f'Modules<num={self._modules}>'
 
     @property
     def modules(self):
-        return list(self._modules.values())
+        return list(self._modules)
 
     @staticmethod
     def from_files(file_paths: Union[str, Sequence[str]], root_dir=None) -> 'Modules':
@@ -218,16 +236,24 @@ class Modules(object):
         # return paths
         return Modules.from_glob(glob_paths, recursive=recursive, root_dir=root_dir)
 
-    def _make_graph(self, include_scoped=True):
+    def make_graph(self, include_scoped=False, module_type='file', startswith=None):
+        if startswith is None:
+            startswith = ''
+        # done
         G = nx.DiGraph()
-        for module in self._modules.values():
-            if module.full_module == 'disent.frameworks.vae.experimental._weak__st_betavae':
-                print(module.imports)
-            for imp in module.imports:
-                G.add_edge(imp.module, module.module)
-            if include_scoped:
-                for imp in module.scoped_imports:
-                    G.add_edge(imp.module, module.module)
+        for module in self._modules:
+            # skip module
+            if not module.get_import_str().startswith(startswith):
+                continue
+            # get imports
+            imports = (module.imports + module.scoped_imports) if include_scoped else module.imports
+            # add edges
+            for imp in imports:
+                # skip module
+                if not imp.module.startswith(startswith):
+                    continue
+                # add edge
+                G.add_edge(import_str_strip(imp.module, ), module.get_import_str(strip_mode=module_type))
         return G
 
     @staticmethod
@@ -244,6 +270,7 @@ class Modules(object):
     def graph_save_visualisation(graph: nx.DiGraph, save_file: str):
         # check
         assert save_file.endswith('.html')
+        os.makedirs(os.path.dirname(os.path.abspath(save_file)), exist_ok=True)
         # visualise
         from pyvis.network import Network
         net = Network(notebook=False, directed=True, width='100%', height='100%')
@@ -269,50 +296,77 @@ class Modules(object):
 #     print(' | '.join(row))
 
 
-def filtered_graph_edges(graph: nx.DiGraph, starts_with):
+def filtered_graph_edges(graph: nx.DiGraph, starts_with, return_removed=False):
     graph, removed = graph.copy(), []
     for module, imp in list(graph.edges):
         if not module.startswith(starts_with) or not imp.startswith(starts_with):
             graph.remove_edge(module, imp)
             removed.append((module, imp))
-    return graph, removed
+    if return_removed:
+        return graph, removed
+    return graph
 
 
 # ========================================================================= #
 # Loader                                                                    #
 # ========================================================================= #
 
+@lru_cache()
+def normalise_import_str(import_str: str, root_dir: str):
+    file = import_str.replace('.', '/')
+    file = os.path.abspath(os.path.join(root_dir, file))
+    # check if module or file
+    is_module = os.path.isdir(file)
+    is_file = os.path.isfile(file + '.py')
+    # check which kind it is
+    if is_module and is_file:
+        raise RuntimeError
+    elif not is_module and not is_file:
+        raise RuntimeError
+    elif is_module:
+        import_str += '.__init__'
+        file += '/__init__.py'
+        if not os.path.isfile(file):
+            raise FileNotFoundError(f'module does not have an __init__.py file: {repr(import_str)}')
+    elif is_file:
+        pass
+    else:
+        raise Exception
+    # done
+    return import_str
+
+
 
 if __name__ == '__main__':
     with TempNumpySeed(777):
-        PROJECT_ROOT = os.path.abspath(os.path.join(__file__, '../..'))
-        DISENT_ROOT = os.path.abspath(os.path.join(PROJECT_ROOT, 'disent'))
-        modules = Modules.from_dirs(DISENT_ROOT, root_dir=PROJECT_ROOT)
-
-        g_imported, removed = filtered_graph_edges(modules.graph_imported, 'disent.frameworks')
+        ROOT = os.path.abspath(os.path.join(__file__, '../..'))
+        DISENT = os.path.abspath(os.path.join(ROOT, 'disent'))
+        modules = Modules.from_dirs(DISENT, root_dir=ROOT)
 
         # visualise
-        # Modules.graph_save_visualisation(_modules._graph, os.path.join(PROJECT_ROOT, 'tests/example.html'))
-
-        # for node in sorted(g_imported.nodes):
-        #     print(node)
-        #     for module, imp, _ in nx.edge_dfs(g_imported, node, orientation='original'):
-        #         print('--', module, '->', imp)
-        #         print(list(g_imported.neighbors(module)))
-
-        # print cycles
-        # print('cycles:')
-        # for cycle in sorted(Modules.graph_find_cycles(modules.graph_imported)):
-        #     print('--', ' -> '.join(cycle))
-
-        # imports = defaultdict(list)
-        # for imp, module in nx.edge_dfs(modules.graph_imported, 'disent.frameworks.framework'):
-        #     imp, module = (modules._modules[m].full_module for m in (imp, module))
-        #     imports[module].append(imp)
-        #     print('>>', module, '->', imp)
-        #
-        # for module, imports in imports.items():
-        #     for imp in imports:
-        #         print(module, '->', imp)
-
+        for import_prefix, module_type in itertools.product(['disent', 'disent.frameworks'], ['file']):
+            # make string
+            suffix = '+'.join(s for s in [module_type, import_prefix if import_prefix else 'ANY'])
+            save_file = os.path.join(ROOT, f'out/imports/imports_{suffix}.html')
+            # make graphs
+            graph = modules.make_graph(include_scoped=False, module_type=module_type, startswith=import_prefix)
+            # filter and replace edges
+            for imp, mod in list(graph.edges):
+                n_imp, n_mod = normalise_import_str(imp, ROOT), normalise_import_str(mod, ROOT)
+                graph.remove_edge(imp, mod)
+                graph.add_edge(n_imp, n_mod)
+            # print cycles
+            print(suffix)
+            for cycle in sorted(Modules.graph_find_cycles(graph)):
+                print('--', ' -> '.join(cycle))
+            print()
+            # make new graph
+            G = nx.DiGraph()
+            for imp, mod in graph.edges:
+                imp = import_str_strip(imp, strip_mode='module')
+                mod = import_str_strip(mod, strip_mode='module')
+                if imp != mod:
+                    G.add_edge(imp, mod)
+            # visualise
+            Modules.graph_save_visualisation(G, save_file=save_file)
 
