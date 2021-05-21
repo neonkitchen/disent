@@ -22,7 +22,12 @@
 #  SOFTWARE.
 #  ~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~
 
-from ._tvae import TripletVae
+import os
+from tests.check_cyclic import Modules
 
-# experimental frameworks
-# from .experimental import *
+
+def test_no_cyclic_deps():
+    PROJECT_ROOT = os.path.abspath(os.path.join(__file__, '../..'))
+    DISENT_ROOT = os.path.abspath(os.path.join(PROJECT_ROOT, 'disent'))
+    modules = Modules.from_dirs(DISENT_ROOT)
+    assert Modules.graph_find_cycles(modules._graph) == []
