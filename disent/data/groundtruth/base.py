@@ -69,7 +69,8 @@ class GroundTruthData(StateSpace):
         # shape as would be for a single observation in a torch batch
         # eg. C x H x W
         shape = self.observation_shape
-        return shape[-1], *shape[:-1]
+        return (shape[-1], *shape[:-1])
+
 
     def __getitem__(self, idx):
         raise NotImplementedError

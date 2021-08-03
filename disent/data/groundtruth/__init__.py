@@ -31,4 +31,5 @@ from ._norb import SmallNorbData
 from ._shapes3d import Shapes3dData
 from ._xyobject import XYObjectData
 from ._xysquares import XYSquaresData
+from ._multimodalxysquares import MultimodalXYSquaresData
 from ._xyblocks import XYBlocksData

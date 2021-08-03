@@ -57,7 +57,7 @@ from experiment.exp.util._visualise import plt_imshow
 # ========================================================================= #
 
 
-def make_dataset(name: str = 'xysquares', factors: bool = False, data_dir='data/dataset'):
+def make_dataset(name: str = 'xysquares', factors: bool = False, data_dir='/Users/neelanpather/dev/disent/data/dataset'):
     Sampler = GroundTruthDatasetAndFactors if factors else GroundTruthDataset
     # make dataset
     if   name == 'xysquares':      dataset = Sampler(XYSquaresData(),              transform=ToStandardisedTensor())
