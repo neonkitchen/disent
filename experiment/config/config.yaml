@@ -19,8 +19,8 @@ defaults:
   - hydra/launcher: submitit_slurm
 
 job:
-  user: 'n_michlo'
-  project: 'DELETE'
+  user: 'neonkitchen'
+  project: 'disent_test'
   name: '${framework.name}:${framework.module.recon_loss}|${dataset.name}:${sampling.name}|${trainer.steps}'
   partition: stampede
 
