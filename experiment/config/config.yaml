@@ -9,7 +9,7 @@ defaults:
   - metrics: all
   - schedule: none
   # runtime
-  - run_length: long
+  - run_length: tiny
   - run_location: cluster_many
   - run_callbacks: vis_slow
   - run_logging: wandb
