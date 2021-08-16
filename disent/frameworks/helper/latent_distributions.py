@@ -73,29 +73,41 @@ def kl_loss_approx_reverse(posterior: Distribution, prior: Distribution, z_sampl
     return posterior.log_prob(z_sampled) - prior.log_prob(z_sampled)
 
 
-def kl_loss_direct_forward(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None):
+def kl_loss_direct_forward(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1):
     # compute the forward kl
     # - kl(prior|post)
     return torch.distributions.kl_divergence(prior, posterior)
 
 
-def kl_loss_approx_forward(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None):
+def kl_loss_approx_forward(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1):
     # compute the approximate forward kl
     # - kl(prior|post)
     assert z_sampled is not None, 'to compute the approximate kl loss, z_sampled needs to be defined (cfg.kl_mode="approx")'
     return prior.log_prob(z_sampled) - posterior.log_prob(z_sampled)
 
 
-def kl_loss_direct_symmetric(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None):
+def kl_loss_direct_symmetric(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1):
     # compute the (scaled) symmetric kl
     # - 0.5 * kl(prior|post) + 0.5 * kl(prior|post)
-    return 0.5 * kl_loss_direct_reverse(posterior, prior, z_sampled) + 0.5 * kl_loss_direct_forward(posterior, prior, z_sampled)
+    return 0.5 * kl_loss_direct_forward(posterior, prior, z_sampled) + 0.5 * kl_loss_direct_reverse(posterior, prior, z_sampled)
 
 
-def kl_loss_approx_symmetric(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None):
+def kl_loss_approx_symmetric(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1):
     # compute the approximate (scaled) symmetric kl
     # - 0.5 * kl(prior|post) + 0.5 * kl(prior|post)
-    return 0.5 * kl_loss_approx_reverse(posterior, prior, z_sampled) + 0.5 * kl_loss_approx_forward(posterior, prior, z_sampled)
+    return 0.5 * kl_loss_approx_forward(posterior, prior, z_sampled) + 0.5 * kl_loss_approx_reverse(posterior, prior, z_sampled)
+
+
+def kl_loss_direct_fdiv(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1):
+    # compute the (scaled) symmetric kl
+    # - 0.5 * kl(prior|post) + 0.5 * kl(prior|post)
+    return beta * kl_loss_direct_forward(posterior, prior, z_sampled) + gamma * kl_loss_direct_reverse(posterior, prior, z_sampled)
+
+
+def kl_loss_approx_fdiv(posterior: Distribution, prior: Distribution,  z_sampled: torch.Tensor = None, beta=1, gamma=1):
+    # compute the approximate (scaled) symmetric kl
+    # - 0.5 * kl(prior|post) + 0.5 * kl(prior|post)
+    return beta * kl_loss_approx_forward(posterior, prior, z_sampled) + gamma * kl_loss_approx_reverse(posterior, prior, z_sampled)
 
 
 _KL_LOSS_MODES = {
@@ -110,11 +122,13 @@ _KL_LOSS_MODES = {
     # symmetric kl
     'direct_symmetric': kl_loss_direct_symmetric,
     'approx_symmetric': kl_loss_approx_symmetric,
-}
+    # linear kl
+    'direct_fdiv': kl_loss_direct_fdiv,
+    'approx_fdiv': kl_loss_approx_fdiv
+                }
 
-
-def kl_loss(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, mode='direct'):
-    return _KL_LOSS_MODES[mode](posterior, prior, z_sampled)
+def kl_loss(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, mode='direct', beta=1, gamma=1):
+    return _KL_LOSS_MODES[mode](posterior=posterior, prior=prior, z_sampled=z_sampled, beta=beta, gamma=gamma)
 
 
 # ========================================================================= #
@@ -148,21 +162,21 @@ class LatentDistsHandler(object):
         return posterior, prior, z_sampled
 
     @final
-    def compute_kl_loss(self, posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None) -> torch.Tensor:
+    def compute_kl_loss(self, posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1) -> torch.Tensor:
         """
         Compute the kl divergence
         """
-        kl = kl_loss(posterior, prior, z_sampled, mode=self._kl_mode)
+        kl = kl_loss(posterior, prior, z_sampled, mode=self._kl_mode, beta=beta, gamma=gamma)
         kl = loss_reduction(kl, reduction=self._reduction)
         return kl
 
     @final
-    def compute_unreduced_kl_loss(self, posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None) -> torch.Tensor:
-        return kl_loss(posterior, prior, z_sampled, mode=self._kl_mode)
+    def compute_unreduced_kl_loss(self, posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1) -> torch.Tensor:
+        return kl_loss(posterior, prior, z_sampled, mode=self._kl_mode, beta=beta, gamma=gamma)
 
     @final
-    def compute_ave_kl_loss(self, ds_posterior: Sequence[Distribution], ds_prior: Sequence[Distribution], zs_sampled: Sequence[torch.Tensor]) -> torch.Tensor:
-        return compute_ave_loss(self.compute_kl_loss, ds_posterior, ds_prior, zs_sampled)
+    def compute_ave_kl_loss(self, ds_posterior: Sequence[Distribution], ds_prior: Sequence[Distribution], zs_sampled: Sequence[torch.Tensor], beta=1, gamma=1) -> torch.Tensor:
+        return compute_ave_loss(self.compute_kl_loss, ds_posterior, ds_prior, zs_sampled, beta=beta, gamma=gamma)
 
 
 # ========================================================================= #
