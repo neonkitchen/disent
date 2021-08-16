@@ -66,7 +66,7 @@ class BetaGammaVae(Vae):
         #          ~= 4 * 0.0007324
         #          ~= 0,003
         beta: float  = 0.003  # approximately equal to mean_sum beta of 4
-        gamma: float = 0.003
+        gamma: float = 0.003  # TODO: check impact mean_sum has on gamma
 
     def __init__(self, make_optimizer_fn, make_model_fn, batch_augment=None, cfg: cfg = None):
         super().__init__(make_optimizer_fn, make_model_fn, batch_augment=batch_augment, cfg=cfg)
@@ -80,22 +80,18 @@ class BetaGammaVae(Vae):
     def compute_ave_reg_loss(self, ds_posterior: Sequence[Distribution], ds_prior: Sequence[Distribution], zs_sampled: Sequence[torch.Tensor]) -> Tuple[Union[torch.Tensor, Number], Dict[str, Any]]:
         # BetaVAE: compute regularization loss (kl divergence)
         # TODO: remove hardcoding; beta, gamma kl_mode & reduction to flow from config
-        #from disent.frameworks.helper.latent_distributions import make_latent_distribution
-        #make_latent_distribution(self.cfg.latent_distribution, kl_mode=self.cfg.kl_loss_mode, reduction=self.cfg.loss_reduction)
-        kl_loss_beta = self.latents_handler(kl_mode= 'direct_forward', reduction='mean').compute_ave_kl_loss(ds_posterior, ds_prior, zs_sampled)
-        kl_loss_gamma = self.latents_handler(kl_mode= 'direct_reverse', reduction='mean').compute_ave_kl_loss(ds_posterior, ds_prior, zs_sampled)
-  
-        kl_reg_loss_beta = self.cfg.beta * kl_loss_beta
-        kl_reg_loss_gamma = self.cfg.gamma * kl_loss_gamma
+        latents_handler = self.latents_handler
+        latents_handler._kl_mode = 'direct_fdiv'
+        latents_handler.beta = self.cfg.beta
+        latents_handler.gamma = self.cfg.gamma
 
-        kl_reg_loss = kl_reg_loss_beta + kl_reg_loss_gamma
+        # TODO: current set up
+        kl_reg_loss = latents_handler.compute_ave_kl_loss(ds_posterior, ds_prior, zs_sampled, beta=self.cfg.beta, gamma=self.cfg.gamma)
 
         # return logs
         return kl_reg_loss, {
-            'kl_loss_beta': kl_loss_beta,
-            'kl_reg_loss': kl_reg_loss_beta,
-            'kl_loss_gamma': kl_loss_gamma,
-            'kl_reg_loss_gamma': kl_reg_loss_gamma,
+            'kl_reg_loss': kl_reg_loss
+
         }
 
 
