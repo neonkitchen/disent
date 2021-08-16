@@ -1,6 +1,6 @@
 defaults:
   # experiment
-  - framework: betavae
+  - framework: betagammavae
   - model: conv64
   - optimizer: radam
   - dataset: xysquares  # allow framework to override settings here, but placing dataset before framework in defaults
@@ -12,7 +12,7 @@ defaults:
   - run_length: tiny
   - run_location: cluster_many
   - run_callbacks: vis_slow
-  - run_logging: wandb
+  - run_logging: none
   # plugins
   - hydra/job_logging: colorlog
   - hydra/hydra_logging: colorlog
@@ -26,6 +26,7 @@ job:
 
 framework:
     beta: 0.003
+    gamma: 0.003
     module:
       recon_loss: mse4
       loss_reduction: mean
