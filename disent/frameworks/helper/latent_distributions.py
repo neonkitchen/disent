@@ -162,21 +162,21 @@ class LatentDistsHandler(object):
         return posterior, prior, z_sampled
 
     @final
-    def compute_kl_loss(self, posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1) -> torch.Tensor:
+    def compute_kl_loss(self, posterior: Distribution, prior: Distribution, beta=1, gamma=1, z_sampled: torch.Tensor = None) -> torch.Tensor:
         """
         Compute the kl divergence
         """
-        kl = kl_loss(posterior, prior, z_sampled, mode=self._kl_mode, beta=beta, gamma=gamma)
+        kl = kl_loss(posterior, prior, mode=self._kl_mode, beta=beta, gamma=gamma, z_sampled=z_sampled)
         kl = loss_reduction(kl, reduction=self._reduction)
         return kl
 
     @final
-    def compute_unreduced_kl_loss(self, posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1) -> torch.Tensor:
-        return kl_loss(posterior, prior, z_sampled, mode=self._kl_mode, beta=beta, gamma=gamma)
+    def compute_unreduced_kl_loss(self, posterior: Distribution, prior: Distribution, beta=1, gamma=1, z_sampled: torch.Tensor = None) -> torch.Tensor:
+        return kl_loss(posterior, prior, mode=self._kl_mode, beta=beta, gamma=gamma, z_sampled=z_sampled)
 
     @final
-    def compute_ave_kl_loss(self, ds_posterior: Sequence[Distribution], ds_prior: Sequence[Distribution], zs_sampled: Sequence[torch.Tensor], beta=1, gamma=1) -> torch.Tensor:
-        return compute_ave_loss(self.compute_kl_loss, ds_posterior, ds_prior, zs_sampled, beta=beta, gamma=gamma)
+    def compute_ave_kl_loss(self, ds_posterior: Sequence[Distribution], ds_prior: Sequence[Distribution], beta=1, gamma=1, zs_sampled: Sequence[torch.Tensor] = None) -> torch.Tensor:
+        return compute_ave_loss(self.compute_kl_loss, ds_posterior, ds_prior, beta=beta, gamma=gamma, zs_sampled=zs_sampled)
 
 
 # ========================================================================= #
