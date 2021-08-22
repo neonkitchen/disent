@@ -73,7 +73,7 @@ def kl_loss_approx_reverse(posterior: Distribution, prior: Distribution, beta=1,
     return posterior.log_prob(z_sampled) - prior.log_prob(z_sampled)
 
 
-def kl_loss_direct_forward(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1):
+def kl_loss_direct_forward(posterior: Distribution, prior: Distribution, beta=1, gamma=1, z_sampled: torch.Tensor = None):
     # compute the forward kl
     # - kl(prior|post)
     return torch.distributions.kl_divergence(prior, posterior)
