@@ -1,6 +1,7 @@
 defaults:
   # experiment
   - framework: betavae
+  - kl_loss_mode: direct_forward
   - model: conv64
   - optimizer: radam
   - dataset: xysquares  # allow framework to override settings here, but placing dataset before framework in defaults

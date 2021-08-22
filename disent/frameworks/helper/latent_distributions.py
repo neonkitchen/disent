@@ -54,7 +54,7 @@ def short_dataclass_repr(self):
 # ========================================================================= #
 
 
-def kl_loss_direct_reverse(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None):
+def kl_loss_direct_reverse(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1):
     # This is how the original VAE/BetaVAE papers do it.
     # - we compute the reverse kl divergence directly instead of approximating it
     # - kl(post|prior)
@@ -64,7 +64,7 @@ def kl_loss_direct_reverse(posterior: Distribution, prior: Distribution, z_sampl
     return torch.distributions.kl_divergence(posterior, prior)
 
 
-def kl_loss_approx_reverse(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None):
+def kl_loss_approx_reverse(posterior: Distribution, prior: Distribution, z_sampled: torch.Tensor = None, beta=1, gamma=1):
     # This is how pytorch-lightning-bolts does it:
     # - kl(post|prior)
     # See issue: https://github.com/PyTorchLightning/pytorch-lightning-bolts/issues/565
